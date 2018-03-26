@@ -1,0 +1,40 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<h2>Это пример сайта, который использует Almost Admin для контроля и систематизации вопросов пользователей.</h2>
+
+<div >
+    <form class="form-group text-center" style="border:solid;border-width:1px" action="OnlineForm" method="post">
+        <h3>Форма с онлайн связью</h3>
+        <br/>
+
+        <div class="row">
+            Введите свое ФИО
+            <input class="input-sm" name="fio" type="text" />
+        </div>
+
+        <div class="row">
+            Введите текст обращения
+            <input class="input-sm" name="text" type="text" />
+        </div>
+        
+        <button class="btn btn-success" type="submit">Отправить</button> 
+    </form>
+
+
+    <form class="form-group text-center"  style="border:solid;border-width:1px" action="MailForm" method="post">
+        <h3>Форма с ответами на почту</h3>
+        <div class="row">
+            Введите свою почту
+            <input class="input-sm" name="mail" type="text" />
+        </div>
+
+        <div class="row">
+            Введите текст обращения
+            <input class="input-sm" name="text" type="text" />
+        </div>
+
+        <button class="btn btn-success">Отправить</button>
+    </form>
+</div>
