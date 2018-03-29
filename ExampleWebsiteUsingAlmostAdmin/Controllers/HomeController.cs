@@ -14,14 +14,50 @@ namespace ExampleWebsiteUsingAlmostAdmin.Controllers
 {
     public class HomeController : Controller
     {
+        private DataStorage _dataStorage;
+
+        public HomeController(DataStorage dataStorage)
+        {
+            _dataStorage = dataStorage;
+        }
+
         public IActionResult Index()
         {
             //var t = JsonConvert.DeserializeObject<AnswerOnRequest>(
             //    "{\"QuestionId\":0,\"StatusCode\":4,\"StatusMessage\":\"Some of the data parameters are invalid.Check the documentation.\"}");
-            AlmostAdminClient cl = new AlmostAdminClient(1, "test", "privateKey", "http://sdf.com/");
-            var answer = cl.SendQuestion("test");
             return View();
         }
+
+        [HttpPost]
+        public IActionResult OnlineForm(string fio, string text)
+        {
+            // TODO: change projectId and USE FIO PARAMETHER
+            var projectId = 1;
+            var returnUrl = Url.Action("StatusFromAlmostAdmin", "Home", null, Request.Scheme);
+
+            var almostAdminClient = new AlmostAdminClient(
+                projectId, 
+                "Denis3200000@yandex.ua",
+                "b8ac8f1f-f035-4cd6-9a53-0b3c21dede55",
+                returnUrl);
+
+            //var answer = almostAdminClient.SendQuestion(text);
+
+            var answer = new AnswerOnRequest { QuestionId = 1, StatusCode = Controllers.StatusCode.Success, StatusMessage = "SUCCESS WITH ME"};
+
+            if (answer.StatusCode == Controllers.StatusCode.Success)
+            {
+                _dataStorage.AllResponsesFromAlmostAdmin.Add(answer); // save answer to storage to keep list of questionIds
+            }
+            return Json(answer);
+        }
+
+        [HttpPost]
+        public IActionResult MailForm(string mail, string text)
+        {
+            return Json("");
+        }
+
 
         public IActionResult About()
         {
@@ -41,8 +77,22 @@ namespace ExampleWebsiteUsingAlmostAdmin.Controllers
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
-    }
 
+        [HttpPost]
+        public async Task<JsonResult> StatusFromAlmostAdmin([FromForm] string data, [FromForm]string signature)
+        {
+                //string answerJson;
+                var decodedData = CryptoUtils.Base64Decode(data);
+                var questionToApi = JsonConvert.DeserializeObject<AnswerOnStatusUrl>(decodedData);
+                
+                if (!AlmostAdminClient.ValidateSignature(data, signature, "b8ac8f1f-f035-4cd6-9a53-0b3c21dede55"))
+                {
+                    return Json("Signature is not valid.");
+                }
+                
+                return Json("*OK*"); // TODO: CHECK THIS VALUE
+        }
+    }
     // TODO: REMOVE THIS, REFERENCE ALMOST ADMIN LIBRARY INSTEAD!!!!!!!!
     // TODO: REMOVE THIS, REFERENCE ALMOST ADMIN LIBRARY INSTEAD!!!!!!!!
     // TODO: REMOVE THIS, REFERENCE ALMOST ADMIN LIBRARY INSTEAD!!!!!!!!
@@ -123,12 +173,50 @@ namespace ExampleWebsiteUsingAlmostAdmin.Controllers
                 return null;
             }
         }
+
+        internal static bool ValidateSignature(string base64EncodedData, string signature, string privateKey)
+        {
+            //var base64DecodedData = CryptoUtils.Base64Decode(data);
+
+            var stringToBeHashed = privateKey + base64EncodedData + privateKey;
+            var sha1HashedString = CryptoUtils.HashSHA1(stringToBeHashed);
+            var base64EncodedSha1String = CryptoUtils.Base64Encode(sha1HashedString);
+
+            return base64EncodedSha1String == signature;
+        }
     }
+
     public class AnswerOnRequest
     {
         public int QuestionId { get; set; }
-        public int StatusCode { get; set; }
+        public StatusCode StatusCode { get; set; }
         public string StatusMessage { get; set; }
+    }
+    public enum StatusCode
+    {
+        Success,
+        Error,
+
+        WrongLoginPasswordCredentials,
+        WrongSignature,
+        WrongData,
+        WrongProjectId,
+        WrongStatusUrl,
+
+        AnswerByHuman,
+        AnswerBySystem
+    }
+    public class AnswerOnStatusUrl
+    {
+        public int QuestionId { get; set; }
+        //public OperationType OperationType { get; set; } // QuestionToApi / AnswerToApi
+        public StatusCode StatusCode { get; set; }
+        public string StatusMessage { get; set; }
+
+        public string QuestionText { get; set; }
+        public string AnswerText { get; set; }
+
+        //public bool AnswerToEmail { get; set; }
     }
     public class QuestionToApi
     {

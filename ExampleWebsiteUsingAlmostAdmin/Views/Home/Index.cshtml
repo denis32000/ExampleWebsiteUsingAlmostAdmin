@@ -2,39 +2,98 @@
     ViewData["Title"] = "Home Page";
 }
 
-<h2>Это пример сайта, который использует Almost Admin для контроля и систематизации вопросов пользователей.</h2>
+<h3>Это пример сайта, который использует Almost Admin для контроля и систематизации вопросов пользователей.</h3>
 
-<div >
-    <form class="form-group text-center" style="border:solid;border-width:1px" action="OnlineForm" method="post">
-        <h3>Форма с онлайн связью</h3>
-        <br/>
+<div class="container">
+    <div class="row">
+        <div class="col-md-6">
+            <form id="form1" class="onlineForm form-group text-center" asp-controller="Home" asp-action="OnlineForm" method="post">
+                <h3>Форма с онлайн связью</h3>
+                <br />
 
-        <div class="row">
-            Введите свое ФИО
-            <input class="input-sm" name="fio" type="text" />
-        </div>
+                <div class="row">
+                    Введите свое ФИО
+                    <input class="input-sm" name="fio" type="text" />
+                </div>
 
-        <div class="row">
-            Введите текст обращения
-            <input class="input-sm" name="text" type="text" />
+                <div class="row">
+                    Введите текст обращения
+                    <input class="input-sm" name="text" type="text" />
+                </div>
+
+                <button class="btn btn-success" type="submit">Отправить</button>
+            </form>
+
         </div>
         
-        <button class="btn btn-success" type="submit">Отправить</button> 
-    </form>
+        <div class="col-md-6">
+            <div id="formWithOnline">
+                sdfsd
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <form class="onlineForm form-group text-center" asp-controller="Home" asp-action="MailForm" method="post">
+                <h3>Форма с ответами на почту</h3>
+                <div class="row">
+                    Введите свою почту
+                    <input class="input-sm" name="mail" type="text" />
+                </div>
 
+                <div class="row">
+                    Введите текст обращения
+                    <input class="input-sm" name="text" type="text" />
+                </div>
 
-    <form class="form-group text-center"  style="border:solid;border-width:1px" action="MailForm" method="post">
-        <h3>Форма с ответами на почту</h3>
-        <div class="row">
-            Введите свою почту
-            <input class="input-sm" name="mail" type="text" />
+                <button class="btn btn-success" type="submit">Отправить</button>
+            </form>
         </div>
 
-        <div class="row">
-            Введите текст обращения
-            <input class="input-sm" name="text" type="text" />
+        <div class="col-md-6">
+            <div id="formWithEmail">
+                dfsdfs
+            </div>
         </div>
-
-        <button class="btn btn-success">Отправить</button>
-    </form>
+    </div>
 </div>
+
+
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+    <script type="text/javascript">
+
+        $("#form1").submit(function (event) {
+            event.preventDefault();
+            if (!$(this).valid())
+                return; // form is not valid
+
+            // submit validated form via Ajax
+            $.ajax({
+                type: 'POST',
+                dataType: 'json',
+                url: $(this).attr('action'),
+                xhrFields: {
+                    withCredentials: true
+                },
+                data: $(this).serialize(),
+                //beforeSend: function () {
+                //    console.log($(this).serialize());                       
+                //},
+                success: function (data) {
+                    console.log(data);
+                    $("#formWithOnline").append("<p>" + data.statusMessage + "</p>");
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    console.log(2);
+                },
+                complete: function () {
+                    console.log(3);
+                }
+            });
+        });
+        
+    </script>
+}
