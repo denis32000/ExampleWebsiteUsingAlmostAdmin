@@ -16,6 +16,14 @@ namespace ExampleWebsiteUsingAlmostAdmin.Controllers
     {
         private DataStorage _dataStorage;
 
+        // Almost admin: user defined constants
+        private const int projectId = 3;
+        private const string login = "d1@d.A";//"Denis3200000@yandex.ua";
+        private const string projectPrivateKey = "b4644ea7-4419-4c6a-8949-c56cc0b3c82c";
+        //
+
+
+
         public HomeController(DataStorage dataStorage)
         {
             _dataStorage = dataStorage;
@@ -29,35 +37,148 @@ namespace ExampleWebsiteUsingAlmostAdmin.Controllers
         }
 
         [HttpPost]
+        public JsonResult StatusFromAlmostAdmin([FromForm] string data, [FromForm]string signature)
+        {
+            if (!AlmostAdminClient.ValidateSignature(data, signature, projectPrivateKey))
+            {
+                return Json("Signature is not valid.");
+            }
+
+            //string answerJson;
+            var decodedData = CryptoUtils.Base64Decode(data);
+            //var questionToApi = JsonConvert.DeserializeObject<AnswerOnStatusUrl>(decodedData);
+
+            //var t = JsonConvert.SerializeObject(decodedData);
+            _dataStorage.totalLogList.Add(decodedData);
+
+            return Json("*OK*"); // TODO: CHECK THIS VALUE
+        }
+
+        [HttpPost]
         public IActionResult OnlineForm(string fio, string text)
         {
             // TODO: change projectId and USE FIO PARAMETHER
-            var projectId = 1;
             var returnUrl = Url.Action("StatusFromAlmostAdmin", "Home", null, Request.Scheme);
 
             var almostAdminClient = new AlmostAdminClient(
                 projectId, 
-                "Denis3200000@yandex.ua",
-                "b8ac8f1f-f035-4cd6-9a53-0b3c21dede55",
+                login,
+                projectPrivateKey,
                 returnUrl);
 
-            //var answer = almostAdminClient.SendQuestion(text);
+            var answer = almostAdminClient.SendQuestion(text, false);
 
-            var answer = new AnswerOnRequest { QuestionId = 1, StatusCode = Controllers.StatusCode.Success, StatusMessage = "SUCCESS WITH ME"};
+            //var answer = new AnswerOnRequest { QuestionId = 1, StatusCode = Controllers.StatusCode.Success, StatusMessage = "SUCCESS WITH ME"};
 
             if (answer.StatusCode == Controllers.StatusCode.Success)
             {
                 _dataStorage.AllResponsesFromAlmostAdmin.Add(answer); // save answer to storage to keep list of questionIds
             }
-            return Json(answer);
+
+            var t = JsonConvert.SerializeObject(answer);
+            _dataStorage.totalLogList.Add(t);
+
+            return Ok();
         }
 
         [HttpPost]
         public IActionResult MailForm(string mail, string text)
         {
-            return Json("");
+            var almostAdminClient = new AlmostAdminClient(
+                projectId,
+                login,
+                projectPrivateKey,
+                mail);
+
+            var answer = almostAdminClient.SendQuestion(text, true);
+
+            //var answer = new AnswerOnRequest { QuestionId = 1, StatusCode = Controllers.StatusCode.Success, StatusMessage = "SUCCESS WITH ME"};
+
+            if (answer.StatusCode == Controllers.StatusCode.Success)
+            {
+                _dataStorage.AllResponsesFromAlmostAdmin.Add(answer); // save answer to storage to keep list of questionIds
+            }
+
+            var t = JsonConvert.SerializeObject(answer);
+            _dataStorage.totalLogList.Add(t);
+
+            return Ok();
         }
 
+        [HttpPost]
+        public IActionResult GetSimilar(string text)
+        {
+            var returnUrl = Url.Action("StatusFromAlmostAdmin", "Home", null, Request.Scheme);
+            var almostAdminClient = new AlmostAdminClient(
+                projectId,
+                login,
+                projectPrivateKey,
+                returnUrl);
+
+            var answer = almostAdminClient.GetSimilar(text);
+
+            //var answer = new AnswerOnRequest { QuestionId = 1, StatusCode = Controllers.StatusCode.Success, StatusMessage = "SUCCESS WITH ME"};
+
+            if (answer.StatusCode == Controllers.StatusCode.Success)
+            {
+                _dataStorage.AllResponsesFromAlmostAdmin.Add(answer); // save answer to storage to keep list of questionIds
+            }
+
+            var t = JsonConvert.SerializeObject(answer);
+            _dataStorage.totalLogList.Add(t);
+
+            return Ok();
+        }
+        
+        [HttpPost]
+        public IActionResult SendAnswer(int questId, string text)
+        {
+            var returnUrl = Url.Action("StatusFromAlmostAdmin", "Home", null, Request.Scheme);
+            var almostAdminClient = new AlmostAdminClient(
+                projectId,
+                login,
+                projectPrivateKey,
+                returnUrl);
+
+            var answer = almostAdminClient.SendAnswer(text, questId);
+
+            //var answer = new AnswerOnRequest { QuestionId = 1, StatusCode = Controllers.StatusCode.Success, StatusMessage = "SUCCESS WITH ME"};
+
+            if (answer.StatusCode == Controllers.StatusCode.Success)
+            {
+                _dataStorage.AllResponsesFromAlmostAdmin.Add(answer); // save answer to storage to keep list of questionIds
+            }
+
+            var t = JsonConvert.SerializeObject(answer);
+            _dataStorage.totalLogList.Add(t);
+
+            return Ok();
+        }
+
+        [HttpPost]
+        public IActionResult GetQuestiion(int questId)
+        {
+            var returnUrl = Url.Action("StatusFromAlmostAdmin", "Home", null, Request.Scheme);
+            var almostAdminClient = new AlmostAdminClient(
+                projectId,
+                login,
+                projectPrivateKey,
+                returnUrl);
+
+            var answer = almostAdminClient.GetQuestion(questId);
+
+            //var answer = new AnswerOnRequest { QuestionId = 1, StatusCode = Controllers.StatusCode.Success, StatusMessage = "SUCCESS WITH ME"};
+
+            if (answer.StatusCode == Controllers.StatusCode.Success)
+            {
+                _dataStorage.AllResponsesFromAlmostAdmin.Add(answer); // save answer to storage to keep list of questionIds
+            }
+
+            var t = JsonConvert.SerializeObject(answer);
+            _dataStorage.totalLogList.Add(t);
+
+            return Ok();
+        }
 
         public IActionResult About()
         {
@@ -78,19 +199,17 @@ namespace ExampleWebsiteUsingAlmostAdmin.Controllers
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
 
-        [HttpPost]
-        public async Task<JsonResult> StatusFromAlmostAdmin([FromForm] string data, [FromForm]string signature)
+        [HttpGet]
+        public IActionResult Logs()
         {
-                //string answerJson;
-                var decodedData = CryptoUtils.Base64Decode(data);
-                var questionToApi = JsonConvert.DeserializeObject<AnswerOnStatusUrl>(decodedData);
-                
-                if (!AlmostAdminClient.ValidateSignature(data, signature, "b8ac8f1f-f035-4cd6-9a53-0b3c21dede55"))
-                {
-                    return Json("Signature is not valid.");
-                }
-                
-                return Json("*OK*"); // TODO: CHECK THIS VALUE
+            var htmlstr = String.Empty;
+            int counter = 0;
+            foreach(var i in _dataStorage.totalLogList)
+            {
+                counter++;
+                htmlstr += "____________ " + counter + " ____________<br/>" + i + "<br/>";
+            }
+            return Content(htmlstr);
         }
     }
     // TODO: REMOVE THIS, REFERENCE ALMOST ADMIN LIBRARY INSTEAD!!!!!!!!
@@ -111,9 +230,10 @@ namespace ExampleWebsiteUsingAlmostAdmin.Controllers
     // TODO: REMOVE THIS, REFERENCE ALMOST ADMIN LIBRARY INSTEAD!!!!!!!!
     // TODO: REMOVE THIS, REFERENCE ALMOST ADMIN LIBRARY INSTEAD!!!!!!!!
     // TODO: REMOVE THIS, REFERENCE ALMOST ADMIN LIBRARY INSTEAD!!!!!!!!
-    public class AlmostAdminClient
+    public sealed class AlmostAdminClient
     {
-        private string _apiRoute = "http://localhost:61555/api/question/";
+        private string _apiQuestionRoute = "http://localhost:61555/api/question/";
+        private string _apiAnswerRoute = "http://localhost:61555/api/answer/";
         private int _projectId;
         private string _login;
         private string _statusUrl;
@@ -122,12 +242,154 @@ namespace ExampleWebsiteUsingAlmostAdmin.Controllers
         public AlmostAdminClient(int projectId, string login, string projectPrivateKey, string statusUrl, string apiLink = null)
         {
             if (!string.IsNullOrEmpty(apiLink))
-                _apiRoute = apiLink;
+                _apiQuestionRoute = apiLink;
 
             _projectId = projectId;
             _login = login;
             _statusUrl = statusUrl;
             _privateKey = projectPrivateKey;
+        }
+
+        public PostQuestionResponse SendQuestion(string questionText, bool email)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(questionText))
+                    return null;
+
+                var question = new PostQuestion
+                {
+                    Login = _login,
+                    ProjectId = _projectId,
+                    StatusUrl = _statusUrl,
+                    Text = questionText,
+                    AnswerToEmail = email
+                };
+
+                var questionJson = JsonConvert.SerializeObject(question);
+                var signature = CreateSignature(questionJson, _privateKey);
+                var data = CryptoUtils.Base64Encode(questionJson);
+
+                var request = new RestRequest(Method.POST);
+                request.AddParameter("data", data);
+                request.AddParameter("signature", signature);
+
+                var response = new RestClient(_apiQuestionRoute).Execute(request);
+
+                var result = JsonConvert.DeserializeObject<PostQuestionResponse>(response.Content);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+
+        public PostAnswerResponse SendAnswer(string answerText, int questionId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(answerText))
+                    return null;
+
+                var question = new PostAnswer
+                {
+                    Login = _login,
+                    ProjectId = _projectId,
+                    AnswerText = answerText,
+                    QuestionId = questionId
+                };
+
+                var questionJson = JsonConvert.SerializeObject(question);
+                var signature = CreateSignature(questionJson, _privateKey);
+                var data = CryptoUtils.Base64Encode(questionJson);
+
+                var request = new RestRequest(Method.POST);
+                request.AddParameter("data", data);
+                request.AddParameter("signature", signature);
+
+                var response = new RestClient(_apiAnswerRoute).Execute(request);
+
+                var result = JsonConvert.DeserializeObject<PostAnswerResponse>(response.Content);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+
+        public GetQuestionsResponse GetSimilar(string questionText)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(questionText))
+                    return null;
+
+                var question = new GetQuestions
+                {
+                    Login = _login,
+                    ProjectId = _projectId,
+                    Text = questionText,
+                    SimilarMaxCount = 10
+                };
+
+                var questionJson = JsonConvert.SerializeObject(question);
+                var signature = CreateSignature(questionJson, _privateKey);
+                var data = CryptoUtils.Base64Encode(questionJson);
+
+                var request = new RestRequest(Method.GET);
+                request.AddParameter("data", data);
+                request.AddParameter("signature", signature);
+
+                var response = new RestClient("http://localhost:61555/api/find/").Execute(request);
+
+                var result = JsonConvert.DeserializeObject<GetQuestionsResponse>(response.Content);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+
+        public GetQuestionResponse GetQuestion(int id)
+        {
+            try
+            {
+                var question = new GetQuestion
+                {
+                    Login = _login,
+                    ProjectId = _projectId,
+                    QuestionId = id
+                };
+
+                var questionJson = JsonConvert.SerializeObject(question);
+                var signature = CreateSignature(questionJson, _privateKey);
+                var data = CryptoUtils.Base64Encode(questionJson);
+
+                var request = new RestRequest(Method.GET);
+                request.AddParameter("data", data);
+                request.AddParameter("signature", signature);
+
+                var response = new RestClient(_apiQuestionRoute).Execute(request);
+
+                var result = JsonConvert.DeserializeObject<GetQuestionResponse>(response.Content);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+
+        internal static bool ValidateSignature(string base64EncodedData, string signature, string privateKey)
+        {
+            var stringToBeHashed = privateKey + base64EncodedData + privateKey;
+            var sha1HashedString = CryptoUtils.HashSHA1(stringToBeHashed);
+            var base64EncodedSha1String = CryptoUtils.Base64Encode(sha1HashedString);
+
+            return base64EncodedSha1String == signature;
         }
 
         private string CreateSignature(string jsonData, string privateKey)
@@ -139,59 +401,8 @@ namespace ExampleWebsiteUsingAlmostAdmin.Controllers
 
             return base64EncodedSha1String;
         }
-
-        public AnswerOnRequest SendQuestion(string questionText)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(questionText))
-                    return null;
-
-                var question = new QuestionToApi
-                {
-                    Login = _login,
-                    ProjectId = _projectId,
-                    StatusUrl = _statusUrl,
-                    Text = questionText
-                };
-
-                var questionJson = JsonConvert.SerializeObject(question);
-                var signature = CreateSignature(questionJson, _privateKey);
-                var data = CryptoUtils.Base64Encode(questionJson);
-
-                var request = new RestRequest(Method.POST);
-                request.AddParameter("data", data);
-                request.AddParameter("signature", signature);
-
-                var response = new RestClient(_apiRoute).Execute(request);
-
-                var result = JsonConvert.DeserializeObject<AnswerOnRequest>(response.Content);
-                return result;
-            }
-            catch (Exception ex)
-            {
-                return null;
-            }
-        }
-
-        internal static bool ValidateSignature(string base64EncodedData, string signature, string privateKey)
-        {
-            //var base64DecodedData = CryptoUtils.Base64Decode(data);
-
-            var stringToBeHashed = privateKey + base64EncodedData + privateKey;
-            var sha1HashedString = CryptoUtils.HashSHA1(stringToBeHashed);
-            var base64EncodedSha1String = CryptoUtils.Base64Encode(sha1HashedString);
-
-            return base64EncodedSha1String == signature;
-        }
     }
 
-    public class AnswerOnRequest
-    {
-        public int QuestionId { get; set; }
-        public StatusCode StatusCode { get; set; }
-        public string StatusMessage { get; set; }
-    }
     public enum StatusCode
     {
         Success,
@@ -203,9 +414,147 @@ namespace ExampleWebsiteUsingAlmostAdmin.Controllers
         WrongProjectId,
         WrongStatusUrl,
 
+        // get response
+        WrongQuestionId,
+
         AnswerByHuman,
         AnswerBySystem
     }
+
+    public interface IApiRequest
+    {
+        bool IsModelValid();
+        string Login { get; set; }
+    }
+
+    public interface IApiResponse
+    {
+        StatusCode StatusCode { get; set; }
+        string StatusMessage { get; set; }
+    }
+
+    public class PostQuestion : IApiRequest
+    {
+        public int ProjectId { get; set; }
+        public string Text { get; set; }
+        public string StatusUrl { get; set; }
+        public bool AnswerToEmail { get; set; }
+
+        // IApiRequest
+        public string Login { get; set; }
+        public bool IsModelValid()
+        {
+            if (//Id > 0 && Id < Int32.MaxValue && 
+                ProjectId > 0 && ProjectId < Int32.MaxValue &&
+                !string.IsNullOrEmpty(Login) &&
+                !string.IsNullOrEmpty(Text) &&
+                !string.IsNullOrEmpty(StatusUrl))
+                return true;
+
+            return false;
+        }
+    }
+
+    public class GetQuestion : IApiRequest
+    {
+        public int ProjectId { get; set; }
+        public int QuestionId { get; set; }
+
+        // IApiRequest
+        public string Login { get; set; }
+        public bool IsModelValid()
+        {
+            if (//Id > 0 && Id < Int32.MaxValue && 
+                ProjectId > 0 && ProjectId < Int32.MaxValue &&
+                QuestionId > 0 && QuestionId < Int32.MaxValue &&
+                !string.IsNullOrEmpty(Login))
+                return true;
+
+            return false;
+        }
+    }
+
+    public class GetQuestions : IApiRequest
+    {
+        public int ProjectId { get; set; }
+        public string Text { get; set; }
+        public int SimilarMaxCount { get; set; }
+
+        // IApiRequest
+        public string Login { get; set; }
+        public bool IsModelValid()
+        {
+            if (//Id > 0 && Id < Int32.MaxValue && 
+                ProjectId > 0 && ProjectId < Int32.MaxValue &&
+                !string.IsNullOrEmpty(Login) &&
+                !string.IsNullOrEmpty(Text) &&
+                SimilarMaxCount > 0 && SimilarMaxCount < Int32.MaxValue)
+                return true;
+
+            return false;
+        }
+    }
+
+    public class PostQuestionResponse : IApiResponse
+    {
+        public int QuestionId { get; set; }
+
+        // IApiResponse
+        public StatusCode StatusCode { get; set; }
+        public string StatusMessage { get; set; }
+    }
+
+    public class GetQuestionResponse : IApiResponse
+    {
+        public int QuestionId { get; set; }
+        public string QuestionText { get; set; }
+        public DateTime Date { get; set; }
+        public bool HasAnswer { get; set; }
+        public string AnswerText { get; set; }
+
+        // IApiResponse
+        public StatusCode StatusCode { get; set; }
+        public string StatusMessage { get; set; }
+    }
+
+    public class GetQuestionsResponse : IApiResponse
+    {
+        public string QuestionText { get; set; }
+        public List<string> Questions { get; set; }
+
+        // IApiResponse
+        public StatusCode StatusCode { get; set; }
+        public string StatusMessage { get; set; }
+    }
+
+
+    public class PostAnswer : IApiRequest
+    {
+        public int ProjectId { get; set; }
+        public int QuestionId { get; set; }
+        public string AnswerText { get; set; }
+
+        // IApiRequest
+        public string Login { get; set; }
+        public bool IsModelValid()
+        {
+            if (//Id > 0 && Id < Int32.MaxValue && 
+                ProjectId > 0 && ProjectId < Int32.MaxValue &&
+                !string.IsNullOrEmpty(Login))
+                return true;
+
+            return false;
+        }
+    }
+    public class PostAnswerResponse : IApiResponse
+    {
+        public int QuestionId { get; set; }
+
+        // IApiResponse
+        public StatusCode StatusCode { get; set; }
+        public string StatusMessage { get; set; }
+    }
+
     public class AnswerOnStatusUrl
     {
         public int QuestionId { get; set; }
@@ -218,13 +567,7 @@ namespace ExampleWebsiteUsingAlmostAdmin.Controllers
 
         //public bool AnswerToEmail { get; set; }
     }
-    public class QuestionToApi
-    {
-        public int ProjectId { get; set; }
-        public string Login { get; set; }
-        public string Text { get; set; }
-        public string StatusUrl { get; set; }
-    }
+
     public static class CryptoUtils
     {
         public static string Base64Decode(string base64EncodedData)

@@ -8,6 +8,7 @@ namespace ExampleWebsiteUsingAlmostAdmin
 {
     public class DataStorage
     {
-        public List<AnswerOnRequest> AllResponsesFromAlmostAdmin { get; set; } = new List<AnswerOnRequest>();
+        public List<IApiResponse> AllResponsesFromAlmostAdmin { get; set; } = new List<IApiResponse>();
+        public List<string> totalLogList = new List<string>();
     }
 }

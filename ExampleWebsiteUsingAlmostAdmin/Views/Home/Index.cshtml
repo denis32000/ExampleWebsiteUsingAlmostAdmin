@@ -1,63 +1,125 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Отладочный клиент";
 }
 
 <h3>Это пример сайта, который использует Almost Admin для контроля и систематизации вопросов пользователей.</h3>
 
+
+Cтатус коды: <br />
+        0 - Success,<br />
+        1 - Error,<br />
+
+        2 - WrongLoginPasswordCredentials,<br />
+        3 - WrongSignature,<br />
+        4 - WrongData,<br />
+        5 - WrongProjectId,<br />
+        6 - WrongStatusUrl,<br />
+
+        7 - WrongQuestionId,<br />
+
+        8 - AnswerByHuman,<br />
+        9 - AnswerBySystem<br />
+
+
 <div class="container">
     <div class="row">
-        <div class="col-md-6">
-            <form id="form1" class="onlineForm form-group text-center" asp-controller="Home" asp-action="OnlineForm" method="post">
-                <h3>Форма с онлайн связью</h3>
-                <br />
+        <div class="col-md-4">
 
-                <div class="row">
-                    Введите свое ФИО
-                    <input class="input-sm" name="fio" type="text" />
-                </div>
+            <div class="row">
+                <form id="form1" class="onlineForm form-group text-center formwithdata" asp-controller="Home" asp-action="OnlineForm" method="post">
+                    <h3>Форма с онлайн связью</h3>
+                    <br />
 
-                <div class="row">
-                    Введите текст обращения
-                    <input class="input-sm" name="text" type="text" />
-                </div>
+                    <div class="row">
+                        Введите свое ФИО
+                        <input class="input-sm" name="fio" type="text" />
+                    </div>
 
-                <button class="btn btn-success" type="submit">Отправить</button>
-            </form>
+                    <div class="row">
+                        Введите текст обращения
+                        <input class="input-sm" name="text" type="text" />
+                    </div>
 
+                    <button class="btn btn-success" type="submit">Отправить</button>
+                </form>
+            </div>
+
+            <div class="row">
+                <form id="form2" class="onlineForm form-group text-center" asp-controller="Home" asp-action="MailForm" method="post">
+                    <h3>Форма с ответами на почту</h3>
+                    <div class="row">
+                        Введите свою почту
+                        <input class="input-sm" name="mail" type="text" />
+                    </div>
+
+                    <div class="row">
+                        Введите текст обращения
+                        <input class="input-sm" name="text" type="text" />
+                    </div>
+
+                    <button class="btn btn-success" type="submit">Отправить</button>
+                </form>
+            </div>
+
+            <div class="row">
+                <form id="form3" class="onlineForm form-group text-center" asp-controller="Home" asp-action="GetSimilar" method="post">
+                    <h3>Список похожих</h3>
+                    <div class="row">
+                        Введите вопрос
+                        <input class="input-sm" name="text" type="text" />
+                    </div>
+
+                    <button class="btn btn-success" type="submit">Найти похожие</button>
+                </form>
+            </div>
+
+            <div class="row">
+                <form id="form4" class="onlineForm form-group text-center" asp-controller="Home" asp-action="SendAnswer" method="post">
+                    <h3>Ответить на вопрос по ID</h3>
+
+                    <div class="row">
+                        Введите ID вопроса который Вам выдал Almost Admin при создании вопроса.
+                        <input class="input-sm" name="questId" type="text" />
+                    </div>
+
+                    <div class="row">
+                        Введите текст ответа
+                        <input class="input-sm" name="text" type="text" />
+                    </div>
+
+                    <button class="btn btn-success" type="submit">Ответить</button>
+                </form>
+            </div>
+
+            <div class="row">
+                <form id="form5" class="onlineForm form-group text-center" asp-controller="Home" asp-action="GetQuestiion" method="post">
+                    <h3>Получить вопрос по ID</h3>
+
+                    <div class="row">
+                        Введите ID вопроса который Вам выдал Almost Admin при создании вопроса.
+                        <input class="input-sm" name="questId" type="text" />
+                    </div>
+
+                    <button class="btn btn-success" type="submit">Получить</button>
+                </form>
+            </div>
         </div>
-        
-        <div class="col-md-6">
-            <div id="formWithOnline">
+
+        <div class="col-md-8">
+            <div id="formWithOnline" style="text-align:left;height:780px;overflow-y:auto">
                 sdfsd
             </div>
         </div>
-    </div>
-    <div class="row">
-        <div class="col-md-6">
-            <form class="onlineForm form-group text-center" asp-controller="Home" asp-action="MailForm" method="post">
-                <h3>Форма с ответами на почту</h3>
-                <div class="row">
-                    Введите свою почту
-                    <input class="input-sm" name="mail" type="text" />
-                </div>
 
-                <div class="row">
-                    Введите текст обращения
-                    <input class="input-sm" name="text" type="text" />
-                </div>
 
-                <button class="btn btn-success" type="submit">Отправить</button>
-            </form>
-        </div>
-
-        <div class="col-md-6">
-            <div id="formWithEmail">
-                dfsdfs
-            </div>
-        </div>
     </div>
 </div>
 
+<style>
+    .loolCrazyFrame {
+        background-color: lightgreen;
+    }
+</style>
 
 
 @section Scripts {
@@ -65,35 +127,51 @@
 
     <script type="text/javascript">
 
-        $("#form1").submit(function (event) {
+        $(".onlineForm").submit(function (event) {
             event.preventDefault();
             if (!$(this).valid())
                 return; // form is not valid
+
+            $(this).addClass('loolCrazyFrame');
 
             // submit validated form via Ajax
             $.ajax({
                 type: 'POST',
                 dataType: 'json',
                 url: $(this).attr('action'),
-                xhrFields: {
-                    withCredentials: true
-                },
                 data: $(this).serialize(),
                 //beforeSend: function () {
-                //    console.log($(this).serialize());                       
+                //    console.log($(this).serialize());
                 //},
                 success: function (data) {
-                    console.log(data);
-                    $("#formWithOnline").append("<p>" + data.statusMessage + "</p>");
                 },
                 error: function (jqXHR, textStatus, errorThrown) {
-                    console.log(2);
+                    console.log("Call error");
                 },
                 complete: function () {
-                    console.log(3);
+                    console.log("Ajax requested completed.");
+                    outputLog();
+                    $(".onlineForm").removeClass('loolCrazyFrame');
+                    $("input").val('');
                 }
             });
         });
-        
+
+        function outputLog() {
+            $.get('@Url.Action("Logs")',
+                { },
+                function (response) {
+                    $("#formWithOnline").html(response);
+                });
+        }
+        outputLog();
+
+        var timerId = setInterval(function () {
+            $.get('@Url.Action("Logs")',
+                { },
+                function (response) {
+                    $("#formWithOnline").html(response);
+                });
+        }, 1000);
     </script>
 }
